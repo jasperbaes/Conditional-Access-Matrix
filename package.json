@@ -1,0 +1,16 @@
+{
+  "name": "ca-simulator-userlist",
+  "version": "1.0.0",
+  "description": "",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "author": "",
+  "license": "ISC",
+  "dependencies": {
+    "@azure/msal-node": "^2.6.0",
+    "axios": "^1.6.2",
+    "json-2-csv": "^5.0.1"
+  }
+}
