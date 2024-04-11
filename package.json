@@ -11,6 +11,7 @@
   "dependencies": {
     "@azure/msal-node": "^2.6.0",
     "axios": "^1.6.2",
+    "dotenv": "^16.4.5",
     "json-2-csv": "^5.0.1"
   }
 }

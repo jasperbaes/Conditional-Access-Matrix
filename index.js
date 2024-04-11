@@ -5,28 +5,45 @@
 Name: Conditional Access User Matrix
 Description: This script helps solve a frequent problem: the lack of visibility of the exact Entra ID Conditional Access policies assigned to each user
 Author: Jasper Baes (https://www.linkedin.com/in/jasper-baes/)
-Company: Toreon (https://toreon.com)
 Published: January 20, 2023
 Dependencies: axios, msal-node, fs, json-2-csv
 ======================================================================
 */
 
-// Global variables (change these!)
-var tenantID = ''
-var clientID = ''
-var clientSecret = ''
+// version of the tool
+global.currentVersion = '2024.15'
 
 // Declare libaries
+require('dotenv').config();
 const axios = require('axios');
 const msal = require('@azure/msal-node');
 var fs = require('fs');
 let converter = require('json-2-csv');
 
+global.fgColor = {
+    FgRed: "\x1b[31m",
+    FgGreen: "\x1b[32m",
+    FgYellow: "\x1b[33m",
+    FgBlue: "\x1b[34m",
+    FgMagenta: "\x1b[35m",
+    FgCyan: "\x1b[36m",
+    FgGray: "\x1b[90m",
+}
+global.colorReset = "\x1b[0m"
+
 async function init() {
-    console.log(' ## START ##\n')
+    console.log(`\n${fgColor.FgCyan} ## Conditional Access Matrix ## ${colorReset}${fgColor.FgGray}v${currentVersion}${colorReset}`);
+    console.log(` ${fgColor.FgGray}Created by Jasper Baes - https://github.com/jasperbaes/Conditional-Access-User-Matrix${colorReset}`)
+
+    await onLatestVersion()
+
+    // set global variables
+    global.tenantID = process.env.TENANTID
+    global.clientSecret = process.env.CLIENTSECRET
+    global.clientID = process.env.CLIENTID
 
 
-    if (tenantID.length <= 0 || clientID.length <= 0 || clientSecret.length <= 0) {
+    if (global.tenantID.length <= 0 || global.clientID.length <= 0 || global.clientSecret.length <= 0) {
         console.error(' ERROR: check if global variable(s) are set in script.')
         process.exit()
     }
@@ -42,7 +59,7 @@ init()
 
 async function calculate(accessToken) {
     // Fetch conditional access policies and sort based on displayname
-    console.log(` Fetching Conditional Access policies...`)
+    console.log(`\n Fetching Conditional Access policies...`)
     let conditionalAccessPolicies = await getAllWithNextLink(accessToken, `/v1.0/policies/conditionalAccessPolicies?$filter=state eq 'enabled'`)
     
     if (conditionalAccessPolicies == undefined) {
@@ -63,11 +80,11 @@ async function calculate(accessToken) {
 
     // fetch all users in multiple api calls
     console.log(' Fetching users...')
-    let users = await getAllWithNextLink(accessToken, `/v1.0/users?$select=userPrincipalName,displayName,jobTitle,id`)
+    let users = await getAllWithNextLink(accessToken, `/beta/users?$select=userPrincipalName,displayName,jobTitle,id,accountEnabled`) 
 
-    console.log(` ${users.length} users found. Calculating matrix...\n`)
+    console.log(` ${users.length} users found. Generating matrix...\n`)
 
-    users = users.slice(0,10) // de-comment this to run for the first X users
+    // users = users.slice(0,10) // de-comment this to run for the first X users
     const totalUsers = users.length;
     
     // loop through all users
@@ -88,7 +105,8 @@ async function calculate(accessToken) {
             user: user.displayName?.replace(',', '').replace(';', ''), 
             upn: user.userPrincipalName?.replace(',', ''), 
             job: user?.jobTitle?.replace(',', '').replace(';', ''),
-            external: user.userPrincipalName?.includes('#EXT#@')
+            external: user.userPrincipalName?.includes('#EXT#@'),
+            enabled: user?.accountEnabled
         })
 
         for (let policy of conditionalAccessPolicies) {
@@ -97,18 +115,22 @@ async function calculate(accessToken) {
     }
 
     console.log('\n\n Converting to CSV...')
-    const csv = await converter.json2csv(resultObj);
-    console.log(' Successfully converted to CSV')
+
+    try {
+        const csv = await converter.json2csv(resultObj);    
+        console.log(' Successfully converted to CSV')
     
-    const today = new Date().toISOString().slice(0, 10); // Get today's date in YYYY-MM-DD format
-    const filename = `${today}_ConditionalAccessMatrix.csv`;
-
-    fs.writeFile(filename, csv, err => {
-        if (err) return console.log(err);
-        console.log(` File '${filename}' successfully saved in current directory`);
-        process.exit()
-    });
-
+        const today = new Date().toISOString().slice(0, 10); // Get today's date in YYYY-MM-DD format
+        const filename = `${today}_ConditionalAccessMatrix.csv`;
+    
+        fs.writeFile(filename, csv, err => {
+            if (err) return console.log(err);
+            console.log(` File '${filename}' successfully saved in current directory`);
+            process.exit()
+        });
+    } catch (error) {
+        console.log(' Error converting to CSV or saving to folder.')
+    }
 }
 
 async function calculateIncluded(policy, user, groupList) {
@@ -166,6 +188,7 @@ async function getToken() {
         return await cca.acquireTokenByClientCredential(tokenRequest);
     } catch (error) {
         console.error(' ERROR: error while retrieving access token. Please check the script variables and permissions!\n\n', error)
+        process.exit()
     }
     
 }
@@ -174,12 +197,16 @@ async function getAllWithNextLink(accessToken, urlParameter) {
     let arr = []
     let url = "https://graph.microsoft.com" + urlParameter
 
-    do {
-        let res =  await callApi(url, accessToken);
-        let data = await res?.value
-        url = res['@odata.nextLink']
-        arr.push(...data)
-    } while(url)
+    try {
+        do {
+            let res =  await callApi(url, accessToken);
+            let data = await res?.value
+            url = res['@odata.nextLink']
+            arr.push(...data)
+        } while(url)
+    } catch (error) {
+        
+    }
 
     return arr
 }
@@ -195,7 +222,24 @@ async function callApi(endpoint, accessToken) {
         const response = await axios.default.get(endpoint, options);
         return response.data;
     } catch (error) {
-        console.error(' ERROR: error while fetching from Graph API. Please check the script variables and permissions!\n\n', error)
-        console.log(error)
+        console.error(' ERROR: error while fetching from Graph API. Please check the script variables and permissions!\n')
+        process.exit()
     }
 };
+
+async function onLatestVersion() {
+    // this function shows a message if the version of the tool equals the latest uploaded version in Github
+    try {
+        // fetch latest version from Github
+        const response = await axios.default.get('https://raw.githubusercontent.com/jasperbaes/Conditional-Access-User-Matrix/main/assets/latestVersion.json');
+        let latestVersion = response?.data?.latestVersion
+
+        // if latest version from Github does not match script version, display update message
+        if (response.data) {
+            if (latestVersion !== currentVersion) {
+                console.log(` ${fgColor.FgGray}[${fgColor.FgRed}-${fgColor.FgGray}] ${fgColor.FgRed}update available!${fgColor.FgGray} Run 'git pull' and 'npm install' to update from ${currentVersion} --> ${latestVersion}${colorReset}`)
+            }
+        }
+    } catch (error) { // no need to log anything
+    }
+}
