@@ -89,7 +89,7 @@ async function calculate(accessToken) {
     console.log(` [${fgColor.FgGreen}✓${colorReset}] ${users.length} users found`);
     console.log(` [${fgColor.FgGray}i${colorReset}] Generating matrix...`);
 
-    users = users.slice(0,10) // de-comment this to run for the first X users
+    // users = users.slice(0,10) // de-comment this to run for the first X users
     const totalUsers = users.length;
     
     // loop through all users
