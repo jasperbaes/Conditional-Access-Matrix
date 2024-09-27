@@ -1,7 +1,9 @@
 <br>
 <p align="center">
+  <a href="https://jbaes.be/CAB">
+    <img src="./assets/logo.png" alt="Logo" height="130">
+  </a>
   <h3 align="center">Conditional Access Impact Matrix</h3>
-
   <p align="center">
     By Jasper Baes
     <br />
@@ -13,11 +15,11 @@
   </p>
 </p>
 
-## What and why
+
 
 The Conditional Access Impact Matrix is tool #3 in the <a href="https://www.jbaes.be/CAB">Conditional Access Blueprint</a>.
 
-The script solves 2 problems:
+This script solves 2 problems:
 - what CA policies are applied to who?
 - what is the user impact of my recent CA policy changes?
 
@@ -34,15 +36,14 @@ Features:
 - extract an Excel visualizing which CA policies are applied on each user
 - filter in this table
 - identify gaps and misconfigurations
+- Predict user impact before enabling CA policies
 - for documentation and compliance purposes
 - easily and quickly answer questions like:
   - what accounts have MFA enabled/disabled?
   - what accounts are excluded form having a compliant device?
   - what accounts are allowed to use legacy auth?
   - ...
-
-These insights are especially needed in larger or more complex environments.
-
+- visualize how recent CA changes impacted your users
 
 ## Usage
 
@@ -50,8 +51,16 @@ Examples:
 
 ```sh
 node index.js
+node index.js --include-report-only
 node index.js --compare 2024-09-01-CA-Impact-Matrix.json
+node index.js --compare 2024-09-01-CA-Impact-Matrix.json --include-report-only
 ```
+
+
+| Parameter           |               Description |
+| ----------------- | --------------------------------------------------------------: |
+| `--include-report-only` | Adding this parameter will also include Conditional Access policies in the 'report-only' state  |
+| `--compare 2024-09-01-CA-Impact-Matrix.json` | Adding this parameter will compare the current output to a previous generated output  |
 
 What running the script looks like:
 
@@ -72,6 +81,15 @@ What running the script looks like:
 
 Jasper Baes (https://www.linkedin.com/in/jasper-baes)
 
+## Release history
+
+Release version numbers: YEAR-WEEK
+
+- 2024.39
+  - added parameter for 'report-only' CA policies
+  - bugfix ([#1](https://github.com/jasperbaes/Conditional-Access-Matrix/issues/1))
+- 2024.38
+  - initial release (open-source)
 
 ## License
 

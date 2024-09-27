@@ -11,7 +11,7 @@ Dependencies: axios, msal-node, fs, json-2-csv
 */
 
 // version of the tool
-global.currentVersion = '2024.34'
+global.currentVersion = '2024.39.1'
 
 // Declare libaries
 require('dotenv').config();
@@ -64,7 +64,14 @@ init()
 async function calculate(accessToken) {
     // Fetch conditional access policies and sort based on displayname
     console.log(` [${fgColor.FgGray}i${colorReset}] Fetching Conditional Access policies...`);
-    let conditionalAccessPolicies = await helper.getAllWithNextLink(accessToken, `/v1.0/policies/conditionalAccessPolicies?$filter=state eq 'enabled'`)
+
+    let url = `/v1.0/policies/conditionalAccessPolicies?$filter=state eq 'enabled'`
+
+    if (scriptParameters.some(param => ['--include-report-only'].includes(param.toLowerCase()))) {
+        url = `/v1.0/policies/conditionalAccessPolicies?$filter=state eq 'enabled' or state eq 'enabledForReportingButNotEnforced'`
+    }
+
+    let conditionalAccessPolicies = await helper.getAllWithNextLink(accessToken, url)
     
     if (conditionalAccessPolicies == undefined) {
         console.log(' ERROR: could not get Conditional Access Polcies')
