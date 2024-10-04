@@ -11,7 +11,7 @@ Dependencies: axios, msal-node, fs, json-2-csv
 */
 
 // version of the tool
-global.currentVersion = '2024.39.1'
+global.currentVersion = '2024.40.1'
 
 // Declare libaries
 require('dotenv').config();

@@ -85,6 +85,9 @@ Jasper Baes (https://www.linkedin.com/in/jasper-baes)
 
 Release version numbers: YEAR-WEEK
 
+- 2024.40
+  - updated installation guide
+  - added .env template file
 - 2024.39
   - added parameter for 'report-only' CA policies
   - bugfix ([#1](https://github.com/jasperbaes/Conditional-Access-Matrix/issues/1))
