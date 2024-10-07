@@ -54,6 +54,10 @@ node index.js
 node index.js --include-report-only
 node index.js --compare 2024-09-01-CA-Impact-Matrix.json
 node index.js --compare 2024-09-01-CA-Impact-Matrix.json --include-report-only
+node index.js --limit 100
+node index.js --group <groupID>
+node index.js --type member
+node index.js --limit 10 --type guest
 ```
 
 
@@ -61,6 +65,9 @@ node index.js --compare 2024-09-01-CA-Impact-Matrix.json --include-report-only
 | ----------------- | --------------------------------------------------------------: |
 | `--include-report-only` | Adding this parameter will also include Conditional Access policies in the 'report-only' state  |
 | `--compare 2024-09-01-CA-Impact-Matrix.json` | Adding this parameter will compare the current output to a previous generated output  |
+| `-l` or `--limit` | Adding this parameter will limit the number of users in scope  |
+| `-g` or `--group` | Adding this parameter will limit the scope to members of a given group  |
+| `-t` or `--type` | Adding this parameter will include members or guest accounts  |
 
 What running the script looks like:
 
@@ -86,6 +93,7 @@ Jasper Baes (https://www.linkedin.com/in/jasper-baes)
 Release version numbers: YEAR-WEEK
 
 - 2024.40
+  - add 3 new parameters: limit, group and type
   - updated installation guide
   - added .env template file
 - 2024.39
