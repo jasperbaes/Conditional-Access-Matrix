@@ -24,11 +24,11 @@ This script solves 2 problems:
 - what is the user impact of my recent CA policy changes?
 
 
-Generated excel:
+Output 1: excel matrix:
 
 <img src="./assets/matrix.png" alt="Logo" width=60%>
 
-Generated impact:
+Output 2: impact changes:
 
 <img src="./assets/impact.png" alt="Logo" width=60%>
 
@@ -63,11 +63,11 @@ node index.js --limit 10 --type guest
 
 | Parameter           |               Description |
 | ----------------- | --------------------------------------------------------------: |
-| `--include-report-only` | Adding this parameter will also include Conditional Access policies in the 'report-only' state  |
-| `--compare 2024-09-01-CA-Impact-Matrix.json` | Adding this parameter will compare the current output to a previous generated output  |
-| `-l` or `--limit` | Adding this parameter will limit the number of users in scope  |
-| `-g` or `--group` | Adding this parameter will limit the scope to members of a given group  |
-| `-t` or `--type` | Adding this parameter will include members or guest accounts  |
+| `--include-report-only` | Includes Conditional Access policies that are in the ‘report-only’ state  |
+| `--compare <file.json>` | Compares the current output to a previously generated output specified by <file> |
+| `-t` or `--type` | Specifies the type of accounts to include (options: `member` or `guest`)  |
+| `-l` or `--limit` | Limits the number of users to the specified count  |
+| `-g` or `--group` | Restricts the scope to members of the specified group  |
 
 What running the script looks like:
 
@@ -92,8 +92,9 @@ Jasper Baes (https://www.linkedin.com/in/jasper-baes)
 
 Release version numbers: YEAR-WEEK
 
-- 2024.40
+- 2024.41
   - add 3 new parameters: limit, group and type
+- 2024.40
   - updated installation guide
   - added .env template file
 - 2024.39

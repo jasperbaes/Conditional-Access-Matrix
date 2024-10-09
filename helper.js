@@ -19,7 +19,7 @@ async function onLatestVersion() {
     // this function shows a message if the version of the tool equals the latest uploaded version in Github
     try {
         // fetch latest version from Github
-        const response = await axios.default.get('https://raw.githubusercontent.com/jasperbaes/Conditional-Access-Matrix/main/assets/latestVersion.json');
+        const response = await axios.default.get('https://raw.githubusercontent.com/jasperbaes/Conditional-Access-Matrix/master/assets/latestVersion.json');
         let latestVersion = response?.data?.latestVersion
 
         // if latest version from Github does not match script version, display update message
@@ -51,7 +51,7 @@ async function getToken() {
         const cca = new msal.ConfidentialClientApplication(msalConfig);
         return await cca.acquireTokenByClientCredential(tokenRequest);
     } catch (error) {
-        console.log(` [${fgColor.FgRed}X${colorReset}] ${fgColor.FgRed}ERROR${colorReset}: Something went wrong generating an access token. Please check the script .env file and application permissions in Entra`);
+        console.log(`\n [${fgColor.FgRed}X${colorReset}] ${fgColor.FgRed}ERROR${colorReset}: Something went wrong generating an access token. Please check the script .env file and application permissions in Entra`);
         console.log(`\n ${error} \n`)
         console.log(` [${fgColor.FgRed}X${colorReset}] Exiting...`);
         process.exit()
