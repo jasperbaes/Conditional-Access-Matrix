@@ -11,7 +11,7 @@ Dependencies: axios, msal-node, fs, json-2-csv
 */
 
 // version of the tool
-global.currentVersion = '2024.40.1'
+global.currentVersion = '2024.41.1'
 
 // Declare libaries
 require('dotenv').config();
@@ -91,12 +91,37 @@ async function calculate(accessToken) {
 
     // fetch all users in multiple api calls
     console.log(` [${fgColor.FgGray}i${colorReset}] Fetching users...`);
-    let users = await helper.getAllWithNextLink(accessToken, `/beta/users?$select=userPrincipalName,displayName,jobTitle,id,accountEnabled`) 
+    let users = await helper.getAllWithNextLink(accessToken, `/beta/users?$select=userPrincipalName,displayName,jobTitle,id,accountEnabled,userType`) 
 
     console.log(` [${fgColor.FgGreen}✓${colorReset}] ${users.length} users found`);
+
+     // type parameter
+     const typeIndex = scriptParameters.findIndex(param => ['-t', '--type'].includes(param.toLowerCase()));
+     if (typeIndex !== -1 && typeIndex + 1 < scriptParameters.length) {
+        const typeValue = scriptParameters[typeIndex + 1];
+         
+        if (typeValue == 'member' || typeValue == 'Member' || typeValue == 'members' || typeValue == 'Members') {
+            users = users.filter(user => user.userType == 'Member')
+        } else if (typeValue == 'guest' || typeValue == 'Guest' || typeValue == 'guests' || typeValue == 'Guests') {
+            users = users.filter(user => user.userType == 'Guest')
+        } else {
+            console.log(` ERROR: parameter -t or --type ${typeValue} should be 'member' or 'guest'`)
+            process.exit()
+        }
+
+        console.log(` [${fgColor.FgGreen}✓${colorReset}] Limiting user scope to the ${users.length} ${typeValue} users`);
+     }
+
+    // limit parameter
+    const limitIndex = scriptParameters.findIndex(param => ['-l', '--limit'].includes(param.toLowerCase()));
+    if (limitIndex !== -1 && limitIndex + 1 < scriptParameters.length) {
+        const limitValue = scriptParameters[limitIndex + 1];
+        users = users.slice(0,limitValue)
+        console.log(` [${fgColor.FgGreen}✓${colorReset}] Limiting user scope to first ${limitValue} users`);
+    }
+
     console.log(` [${fgColor.FgGray}i${colorReset}] Generating matrix...`);
 
-    // users = users.slice(0,10) // de-comment this to run for the first X users
     const totalUsers = users.length;
     
     // loop through all users
@@ -113,6 +138,14 @@ async function calculate(accessToken) {
         process.stdout.cursorTo(0); // Move cursor to start of line
         process.stdout.write(` [${fgColor.FgGray}i${colorReset}] Progress: ${progress.toFixed(2)}% (${totalUsers - (index + 1)} user(s) remaining)`); // Display progress percentage
 
+         // group parameter
+         const groupIndex = scriptParameters.findIndex(param => ['-g', '--group'].includes(param.toLowerCase()));
+         if (groupIndex !== -1 && groupIndex + 1 < scriptParameters.length) {
+             const groupValue = scriptParameters[groupIndex + 1];
+             // skip current for loop if parameter group ID is not in current user group list
+             if (!groupList.includes(groupValue)) continue
+         }
+
         resultObj.push({
             user: user.displayName?.replace(',', '').replace(';', ''), 
             upn: user.userPrincipalName?.replace(',', ''), 
@@ -127,6 +160,7 @@ async function calculate(accessToken) {
     }
 
     process.stdout.write(`\n`)
+    console.log(` [${fgColor.FgGreen}✓${colorReset}] ${resultObj.length} users processed`);
 
     // CSV convert and JSON export
     try {
