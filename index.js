@@ -11,7 +11,7 @@ Dependencies: axios, msal-node, fs, json-2-csv
 */
 
 // version of the tool
-global.currentVersion = '2024.41.1'
+global.currentVersion = '2024.49.1'
 
 // Declare libaries
 require('dotenv').config();
@@ -43,6 +43,7 @@ async function init() {
     global.tenantID = process.env.TENANTID
     global.clientSecret = process.env.CLIENTSECRET
     global.clientID = process.env.CLIENTID
+    // global.thumbprint = process.env.THUMBPRINT  // still in development
 
     if (!global.tenantID || !global.clientID || !global.clientSecret) {
         console.error(' ERROR: check if global variable(s) are set in script.');
@@ -129,8 +130,8 @@ async function calculate(accessToken) {
     resultObj = []
     for (let [index, user] of users.entries()) {
         let groups = []        
-        groups = await helper.callApi(`https://graph.microsoft.com/v1.0/users/${user.id}/memberOf?$select=id`, accessToken, tenantID)
-        let groupList = groups?.value.map(group => group.id)
+        groups = await helper.getAllWithNextLink(accessToken, `/v1.0/users/${user.id}/memberOf?$select=id`)
+        let groupList = groups?.map(group => group.id)
 
         // Log progress
         const progress = ((index + 1) / totalUsers) * 100; // Calculate progress percentage
@@ -155,7 +156,7 @@ async function calculate(accessToken) {
         })
 
         for (let policy of conditionalAccessPolicies) {
-            resultObj.filter(x => x.upn == user.userPrincipalName)[0][policy.displayName] = await calculateIncluded(policy, user, groupList)
+            resultObj.filter(x => x.upn == user.userPrincipalName)[0][policy.displayName] = await calculateIncluded(policy, user, groupList, accessToken)
         }
     }
 
@@ -201,13 +202,15 @@ async function calculate(accessToken) {
     }
 }
 
-async function calculateIncluded(policy, user, groupList) {
+// this function returns if a given user is included or excluded from a given Condittional Access policy
+async function calculateIncluded(policy, user, groupList, accessToken) {
     // check if user is directly excluded in policy
     if (policy.conditions.users.excludeUsers.includes(user.id)) return false
 
     // check if user is member of excluded group in policy
     let excludedGroups = policy.conditions.users.excludeGroups
-    if (checkArrays(groupList, excludedGroups) == true) return false
+    let excludedGroupsRecursive = await calculateSubgroupsRecursive(excludedGroups, accessToken)
+    if (checkArrays(groupList, excludedGroupsRecursive) == true) return false
 
     // check if all users are included
     if (policy.conditions.users.includeUsers.includes('All')) return true
@@ -217,10 +220,38 @@ async function calculateIncluded(policy, user, groupList) {
 
     // check if user is member of a group included
     let includedGroups = policy.conditions.users.includeGroups
-    if (checkArrays(groupList, includedGroups) == true) return true
+    let includedGroupsRecursive = await calculateSubgroupsRecursive(includedGroups, accessToken)  
+    if (checkArrays(groupList, includedGroupsRecursive) == true) return true
 
     return false
 }
+
+    // This function returns all subgroups of a given group recursively, including the given group itself.
+    async function calculateSubgroupsRecursive(groupIds, accessToken) {
+        const subgroups = new Set();
+
+        for (const groupId of groupIds) {
+            await fetchSubgroups(groupId, accessToken, subgroups);
+        }
+        
+        return Array.from(subgroups);
+    }
+
+    // This function returns and adds to the subgroups Set() with all recursive subgroups of a given group
+    async function fetchSubgroups(groupId, accessToken, subgroups) {
+        // Add the current group to the set
+        subgroups.add(groupId);
+
+        // Fetch transitive members of the group
+        const response = await helper.getAllWithNextLink(accessToken, `/v1.0/groups/${groupId}/transitiveMembers?$select=id`)
+
+        // Iterate through the members and recursively fetch subgroups if they are groups
+        for (const member of response) {
+            if (member['@odata.type'] === '#microsoft.graph.group') {
+                await fetchSubgroups(member.id, accessToken, subgroups);
+            }
+        }
+    }
 
 function checkArrays(arr1, arr2) {
     for (let i = 0; i < arr1?.length; i++) {

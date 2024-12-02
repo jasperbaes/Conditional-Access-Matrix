@@ -3,6 +3,8 @@ const axios = require('axios');
 const msal = require('@azure/msal-node');
 var fs = require('fs');
 let converter = require('json-2-csv');
+const NodeCache = require( "node-cache" );
+const myCache = new NodeCache();
 
 // express
 try {
@@ -78,6 +80,15 @@ async function getAllWithNextLink(accessToken, urlParameter) {
 }
 
 async function callApi(endpoint, accessToken) {    
+    // if the result is already in cache, then immediately return that result
+    try {
+        if (myCache.get(endpoint) != undefined) {
+            return myCache.get(endpoint)
+        }
+    } catch (error) {
+        console.error(` [${fgColor.FgRed}X${colorReset}] Error getting local cache.${colorReset}\n\n`, error)
+    }
+
     const options = {
         headers: {
             Authorization: `Bearer ${accessToken}`
@@ -86,6 +97,12 @@ async function callApi(endpoint, accessToken) {
 
     try {
         const response = await axios.default.get(endpoint, options);
+        
+        // add to local cache
+        if (myCache.get(endpoint) == undefined) {
+            myCache.set(endpoint, response.data, 120); // save to cache for 120 seconds
+        }
+
         return response.data;
     } catch (error) {
         console.log(` [${fgColor.FgRed}X${colorReset}] ${fgColor.FgRed}ERROR${colorReset}: Something went wrong fetching from the Microsoft Graph API. Please check the script .env file and application permissions in Entra`);
@@ -190,14 +207,18 @@ async function compare(previousMatrix, currentMatrix) {
     let changes = []
 
     currentMatrix.forEach(userRow => {
+        // find user in previous scan
         let userRowSecondLast = previousMatrix?.find(x => x?.upn == userRow?.upn)
         
-        if (userRowSecondLast) {
+        if (userRowSecondLast) { // if user is also in previous scan
             let differentProperties = [];
-            for (let property in userRow) {
+            for (let property in userRow) { // loop over all objects 
                 if (userRow[property] !== userRowSecondLast[property]) {
-                    if (userRow[property] !== null && userRow[property] !== undefined && userRowSecondLast[property] !== null && userRowSecondLast[property] !== undefined)
-                    differentProperties.push(property);
+                    // below line is commented to allow new CA policy changes to be included (https://github.com/jasperbaes/Conditional-Access-Matrix/issues/7)
+
+                    // if (userRow[property] !== null && userRow[property] !== undefined && userRowSecondLast[property] !== null && userRowSecondLast[property] !== undefined) {
+                        differentProperties.push(property);
+                    // }
                 }
             }
             
@@ -207,8 +228,8 @@ async function compare(previousMatrix, currentMatrix) {
                     changes.push({
                         upn: userRow.upn,
                         policy: property,
-                        old: (userRowSecondLast[property]) ? '✅ Included' : '❌ Excluded',
-                        new: (userRow[property]) ? '✅ Included' : '❌ Excluded',
+                        old: (userRowSecondLast[property] === undefined) ? '/' : (userRowSecondLast[property] ? '✅ Included' : '❌ Excluded'),
+                        new: (userRow[property] === undefined) ? '/' : (userRow[property] ? '✅ Included' : '❌ Excluded')
                     })
                 })
             }

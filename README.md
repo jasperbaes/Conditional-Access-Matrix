@@ -19,7 +19,7 @@
 
 The Conditional Access Impact Matrix is tool #3 in the <a href="https://www.jbaes.be/CAB">Conditional Access Blueprint</a>.
 
-This script solves 2 problems:
+This script answers 2 major questions:
 - what CA policies are applied to who?
 - what is the user impact of my recent CA policy changes?
 
@@ -81,17 +81,23 @@ What running the script looks like:
 
 
 ## Limitations
-- Subgroups might not be fully evaluated
 - Conditional Access policies scoped on users with Entra roles might not be evaluated
 
 ## Contact
 
 Jasper Baes (https://www.linkedin.com/in/jasper-baes)
 
+Discovered a bug or do you have an improvement? Create an <a href="https://github.com/jasperbaes/Conditional-Access-Matrix/issues">issue</a>.
+
 ## Release history
 
-Release version numbers: YEAR-WEEK
+Release version numbers: YEAR.WEEK
 
+- 2024.49
+  - bugfix ([#7](https://github.com/jasperbaes/Conditional-Access-Matrix/issues/7))
+  - implemented local caching (drastically improved execution speed)
+  - added support for recursive groups ([#8](https://github.com/jasperbaes/Conditional-Access-Matrix/issues/8))
+  - removed limit on user group membership reads (previously capped at 100)
 - 2024.41
   - add 3 new parameters: limit, group and type
 - 2024.40
