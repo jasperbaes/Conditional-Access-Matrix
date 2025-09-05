@@ -16,6 +16,9 @@
 </p>
 
 
+> [!CAUTION]
+> The PowerShell version of the Conditional Access Impact Matrix is now available in a separate GitHub repository, along with several other useful tools. This version is updated more frequently than the one in this repository. 👉 [Check it out here](https://github.com/jasperbaes/Conditional-Access-Validator)
+
 
 The Conditional Access Impact Matrix is tool #3 in the <a href="https://www.jbaes.be/CAB">Conditional Access Blueprint</a>.
 
